@@ -1,0 +1,12 @@
+{
+  "name": "deva",
+  "version": "1.0.0",
+  "description": "A global CLI tool to quickly launch and manage your local development projects with a single command.",
+  "license": "ISC",
+  "author": "Semih Cakir",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

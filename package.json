@@ -2,11 +2,22 @@
   "name": "deva",
   "version": "1.0.0",
   "description": "A global CLI tool to quickly launch and manage your local development projects with a single command.",
-  "license": "ISC",
-  "author": "Semih Cakir",
-  "type": "commonjs",
   "main": "index.js",
+  "bin": {
+    "deva": "./index.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  }
+    "test": "echo \"No tests yet\""
+  },
+  "keywords": [
+    "cli",
+    "developer-tools",
+    "dev-workflow",
+    "node",
+    "productivity",
+    "local-development"
+  ],
+  "author": "Semih Cakir",
+  "license": "ISC",
+  "type": "commonjs"
 }

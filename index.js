@@ -1,33 +1,123 @@
 #!/usr/bin/env node
-const { createInterface } = require("readline");
+/**
+ * this project is simple and just need to do two things:
+ * -save the path of the project and the command to run it
+ * -then be able to run it globally from terminal no matter which directory you are in
+ * In the first version i planned to have 3 commands:
+ * - deva add : to add a project to the list of projects that can be run globally
+ * - deva list : to list all the projects that the user has added
+ * - deva run <project name> : to run a project from the list of projects that the user has added
+ * Notes To Self:
+ * - Dont let user choose the names "add", "list", "run" as project names so we can also run the projects without the run command and directly with deva <project-name>
+ * - Have an autocomplete for the project names when the user types deva and then presses tab
+ */
 // deva add
-let PATH_TO_BE_SAVED = __filename;
-let PROJECT_NAME = ""
-let COMMAND_TO_RUN = ""
-async function askQuestion(question, defaultValue) {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  return new Promise((resolve) => {
-    rl.question(`${question} (default: ${defaultValue}): `, (answer) => {      rl.close();
-      resolve(answer || defaultValue);
+
+const path = require("path");
+
+switch (process.argv[2]) {
+  case "add":
+    add();
+    break;
+  case "list":
+    console.log("list command");
+    break;
+  case "run":
+    console.log("run command");
+    break;
+  default:
+    console.log("default command");
+    break;
+}
+
+async function add() {
+  const { createInterface } = require("readline");
+
+  const PATH_THAT_SCRIPT_IS_RUNNING = process.cwd();
+  let projectName = "";
+  let commandToRun = "";
+  async function askQuestion(question, defaultValue) {
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    return new Promise((resolve) => {
+      rl.question(`${question} (default: ${defaultValue}): `, (answer) => {
+        rl.close();
+        resolve(answer || defaultValue);
+      });
+    });
+  }
+  const PROJECT_NAME_QUESTION = "What is the name of your project?";
+
+  //this will only work on windows , find a way to make it work on linux and macos
+  let PROJECT_NAME_DEFAULT = PATH_THAT_SCRIPT_IS_RUNNING.split("\\").pop();
+
+  const COMMAND_TO_RUN_QUESTION =
+    "What command do you want to run to start your project?";
+  const COMMAND_TO_RUN_DEFAULT = "npm run dev";
+
+  // for the name selection of the project
+
+  projectName = await askQuestion(PROJECT_NAME_QUESTION, PROJECT_NAME_DEFAULT);
+  commandToRun = await askQuestion(
+    COMMAND_TO_RUN_QUESTION,
+    COMMAND_TO_RUN_DEFAULT,
+  );
+  console.log(
+    "\npath:",
+    PATH_THAT_SCRIPT_IS_RUNNING,
+    "\nproject name:",
+    projectName,
+    "\ncommand to run:",
+    commandToRun,
+  );
+  //adding these infos to json config
+  const fs = require("fs");
+  const dataToAdd = {
+    path: PATH_THAT_SCRIPT_IS_RUNNING,
+    commandToRun: commandToRun,
+  };
+  let config_path = path.join(__dirname, "config.json");
+  console.log("config path : ", config_path);
+  let config = [];
+
+  //Read the config file
+  fs.readFile(config_path, "utf8", (err, data) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+    console.log("data : ", data);
+    let parsedData = {};
+    //Parse the data from the config file
+    if (data) {
+      try {
+        parsedData = JSON.parse(data);
+        console.log("parsedData : ", typeof parsedData);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    //Put the updated data back into the config file
+    parsedData[projectName] = dataToAdd;
+    fs.writeFile(config_path, JSON.stringify(parsedData, null, 2), (err) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      console.log("Config file updated successfully");
     });
   });
-  
-
-  
 }
-const PROJECT_NAME_QUESTION = "What is the name of your project?";
-let PROJECT_NAME_DEFAULT = PATH_TO_BE_SAVED.split("\\").at(-2);
 
-const COMMAND_TO_RUN_QUESTION = "What command do you want to run to start your project?";
-const COMMAND_TO_RUN_DEFAULT = "npm run dev";
+//deva list
+/*
+ * will be filled
+ */
 
-// for the name selection of the project
-(async () => {
-  PROJECT_NAME = await askQuestion(PROJECT_NAME_QUESTION, PROJECT_NAME_DEFAULT);
-  COMMAND_TO_RUN = await askQuestion(COMMAND_TO_RUN_QUESTION, COMMAND_TO_RUN_DEFAULT);
-  console.log("\nas", PATH_TO_BE_SAVED, "\nproject name:" ,PROJECT_NAME,"\ncommand to run", COMMAND_TO_RUN);
-})();
-// console.log("deva package : ",PATH_TO_BE_SAVED);
+//deva run <project name>
+/*
+ * will be filled
+ */

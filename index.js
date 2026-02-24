@@ -14,7 +14,7 @@
 // deva add
 
 const path = require("path");
-
+const fs = require("fs");
 switch (process.argv[2]) {
   case "add":
     add();
@@ -73,43 +73,23 @@ async function add() {
     commandToRun,
   );
   //adding these infos to json config
-  const fs = require("fs");
   const dataToAdd = {
     path: PATH_THAT_SCRIPT_IS_RUNNING,
     commandToRun: commandToRun,
   };
   let config_path = path.join(__dirname, "config.json");
   console.log("config path : ", config_path);
-  let config = [];
 
   //Read the config file
-  fs.readFile(config_path, "utf8", (err, data) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
-    console.log("data : ", data);
-    let parsedData = {};
-    //Parse the data from the config file
-    if (data) {
-      try {
-        parsedData = JSON.parse(data);
-        console.log("parsedData : ", typeof parsedData);
-      } catch (err) {
-        console.error(err);
-      }
-    }
+  let data = await readConfigFile(config_path);
 
-    //Put the updated data back into the config file
-    parsedData[projectName] = dataToAdd;
-    fs.writeFile(config_path, JSON.stringify(parsedData, null, 2), (err) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      console.log("Config file updated successfully");
-    });
-  });
+  //Parse the data from the config file
+  let parsedData = await parseConfigData(data);
+
+  //Put the updated data back into the config file
+  parsedData[projectName] = dataToAdd;
+  await updateConfigFile(config_path, parsedData);
+  console.log("project added successfully");
 }
 
 //deva list
@@ -121,3 +101,47 @@ async function add() {
 /*
  * will be filled
  */
+
+//Helper functions
+
+// Reads the config file and returns the data as a json object
+// Param {string} config_path - the path to the config file
+// it does not parse the data , only read
+async function readConfigFile(config_path) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(config_path, "utf8", (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        console.log("data from config file : ", data);
+        resolve(data);
+      }
+    });
+  });
+}
+
+// parses the data that came from config file
+async function parseConfigData(data) {
+  return new Promise((resolve, reject) => {
+    try {
+      let parsedData = JSON.parse(data);
+      console.log("parsed data : ", parsedData);
+      resolve(parsedData);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+// update the config
+async function updateConfigFile(config_path, parsedData) {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(config_path, JSON.stringify(parsedData, null, 2), (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}

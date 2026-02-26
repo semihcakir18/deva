@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
  * this project is simple and just need to do two things:
- * -save the path of the project and the command to run it
- * -then be able to run it globally from terminal no matter which directory you are in
+ * - save the path of the project and the command to run it
+ * - then be able to run it globally from terminal no matter which directory you are in
  * In the first version i planned to have 3 commands:
  * - deva add : to add a project to the list of projects that can be run globally
  * - deva list : to list all the projects that the user has added
  * - deva run <project name> : to run a project from the list of projects that the user has added
  * Notes To Self:
+ * - Optimize the data read and parsing , level it up to main function
  * - Dont let user choose the names "add", "list", "run" as project names so we can also run the projects without the run command and directly with deva <project-name>
  * - Have an autocomplete for the project names when the user types deva and then presses tab
  */
@@ -20,16 +21,21 @@ switch (process.argv[2]) {
     add();
     break;
   case "list":
-    console.log("list command");
+    list();
     break;
   case "run":
-    console.log("run command");
+    run();
+    break;
+  case undefined:
+    // put here a the commands that can be run , like a --help command
+    console.log("please enter a command");
     break;
   default:
     console.log("default command");
     break;
 }
 
+//deva add
 async function add() {
   const { createInterface } = require("readline");
 
@@ -86,21 +92,51 @@ async function add() {
   //Parse the data from the config file
   let parsedData = await parseConfigData(data);
 
-  //Put the updated data back into the config file
+  //Update the data and push it to the config file
   parsedData[projectName] = dataToAdd;
   await updateConfigFile(config_path, parsedData);
   console.log("project added successfully");
 }
 
 //deva list
-/*
- * will be filled
- */
+async function list() {
+  let config_path = path.join(__dirname, "config.json");
+  //Read the config file
+  let data = await readConfigFile(config_path);
+
+  //Parse the data from the config file
+  let parsedData = await parseConfigData(data);
+  console.log("list of projects : ", Object.keys(parsedData));
+}
 
 //deva run <project name>
-/*
- * will be filled
- */
+async function run() {
+  let config_path = path.join(__dirname, "config.json");
+  //Read the config file
+  let data = await readConfigFile(config_path);
+
+  //Parse the data from the config file
+  let parsedData = await parseConfigData(data);
+  let projects = Object.keys(parsedData);
+  let projectName = process.argv[3];
+  if (!projects.includes(projectName)) {
+    console.log("project not found");
+    return;
+  }
+  let commandToRun = parsedData[projectName].commandToRun;
+  console.log("command to run : ", commandToRun);
+  let pathToRun = parsedData[projectName].path;
+  console.log("path to run : ", pathToRun);
+
+  const { exec } = require("child_process");
+  exec(commandToRun, { cwd: pathToRun }, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error executing command: ${error.message}`);
+      return;
+    }
+    console.log(stdout);
+  });
+}
 
 //Helper functions
 

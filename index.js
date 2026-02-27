@@ -19,6 +19,7 @@ const PATH_THAT_SCRIPT_IS_RUNNING = process.cwd();
 let projectName = "";
 let commandToRun = "";
 let config_path = path.join(__dirname, "config.json");
+let forbiddenProjectNames = ["add", "list", "run"];
 async function main() {
   // this is the wrapper function so we can call async functions without the top-level await error
 
@@ -56,8 +57,13 @@ async function main() {
       });
       return new Promise((resolve) => {
         rl.question(`${question} (default: ${defaultValue}): `, (answer) => {
-          rl.close();
-          resolve(answer || defaultValue);
+          if (forbiddenProjectNames.includes(answer)) {
+            question = `The project name "${answer}" is not allowed. Please choose a different name. ${question}`;
+            askQuestion(question, defaultValue);
+          } else {
+            rl.close();
+            resolve(answer || defaultValue);
+          }
         });
       });
     }
@@ -106,8 +112,6 @@ async function main() {
 
   //deva run <project name>
   async function run() {
-    //Parse the data from the config file
-    let parsedData = await parseConfigData(data);
     let projects = Object.keys(parsedData);
     let projectName = process.argv[3];
     if (!projects.includes(projectName)) {

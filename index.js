@@ -27,7 +27,24 @@ async function main() {
   //Parse the data from the config file
   let parsedData = await parseConfigData(data, configPath);
 
+  // Handle tabtab completion
+  const tabtab = require('tabtab');
+  const env = tabtab.parseEnv(process.env);
+  if (env.complete) {
+    const projects = Object.keys(parsedData);
+    if (env.prev === 'deva' || env.prev === 'run' || env.prev === 'list') {
+      return tabtab.log(['add', 'list', 'run', '--help', '-h', ...projects]);
+    }
+    return tabtab.log([]);
+  }
+
   switch (process.argv[2]) {
+    case "completion":
+      tabtab.install({
+        name: 'deva',
+        completer: 'deva',
+      });
+      break;
     case "add":
       add();
       break;
@@ -49,6 +66,7 @@ Usage:
   deva list <project-name>    Show details for a specific project
   deva run <project-name>     Run a saved project
   deva <project-name>         Run a saved project (shorthand)
+  deva completion             Enable tab completion (one-time setup)
   deva --help, -h             Show this help message
 
 Examples:
@@ -56,6 +74,7 @@ Examples:
   deva list                   # See all projects
   deva run my-app             # Run "my-app" project
   deva my-app                 # Same as above
+  deva completion             # Enable autocomplete
 
 Config location: ${configPath}
       `);

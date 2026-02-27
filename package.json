@@ -23,5 +23,8 @@
     "type": "git",
     "url": "git+https://github.com/semihcakir18/deva.git"
   },
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "tabtab": "^3.0.2"
+  }
 }

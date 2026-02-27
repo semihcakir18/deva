@@ -8,7 +8,6 @@
  * - deva list : to list all the projects that the user has added
  * - deva run <project name> : to run a project from the list of projects that the user has added
  * Notes To Self:
- * - Dont let user choose the names "add", "list", "run" as project names so we can also run the projects without the run command and directly with deva <project-name>
  * - Have an autocomplete for the project names when the user types deva and then presses tab
  */
 // deva add
@@ -20,6 +19,7 @@ let projectName = "";
 let commandToRun = "";
 let configPath = path.join(__dirname, "config.json");
 let forbiddenProjectNames = ["add", "list", "run"];
+let argumentIndexToRun = 2; // if the user uses run command then project name will be from index 3 onwards , if not it will be from index 2
 async function main() {
   //Read the config file
   let data = await readConfigFile(configPath);
@@ -37,12 +37,13 @@ async function main() {
     case "run":
       run();
       break;
-    case undefined:
+    case undefined || "--help" || "-h":
       // put here a the commands that can be run , like a --help command
       console.log("please enter a command");
       break;
     default:
-      console.log("default command");
+      argumentIndexToRun = 2;
+      run();
       break;
   }
   //deva add
@@ -117,7 +118,7 @@ async function main() {
   //deva run <project name>
   async function run() {
     let projects = Object.keys(parsedData);
-    let projectName = process.argv[3];
+    let projectName = process.argv.slice(argumentIndexToRun).join(" ");
     if (!projects.includes(projectName)) {
       console.log("project not found");
       return;

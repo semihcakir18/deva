@@ -18,6 +18,10 @@
     "local-development"
   ],
   "author": "Semih Cakir",
-  "license": "ISC",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/semihcakir18/deva.git"
+  },
   "type": "commonjs"
 }

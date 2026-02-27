@@ -8,26 +8,25 @@
  * - deva list : to list all the projects that the user has added
  * - deva run <project name> : to run a project from the list of projects that the user has added
  * Notes To Self:
- * - Optimize the data read and parsing , level it up to main function
  * - Dont let user choose the names "add", "list", "run" as project names so we can also run the projects without the run command and directly with deva <project-name>
  * - Have an autocomplete for the project names when the user types deva and then presses tab
  */
 // deva add
 const path = require("path");
 const fs = require("fs");
+const { cwd } = require("node:process");
 const PATH_THAT_SCRIPT_IS_RUNNING = process.cwd();
 let projectName = "";
 let commandToRun = "";
-let config_path = path.join(__dirname, "config.json");
+let configPath = path.join(__dirname, "config.json");
 let forbiddenProjectNames = ["add", "list", "run"];
 async function main() {
-  // this is the wrapper function so we can call async functions without the top-level await error
-
   //Read the config file
-  let data = await readConfigFile(config_path);
+  let data = await readConfigFile(configPath);
 
   //Parse the data from the config file
   let parsedData = await parseConfigData(data);
+
   switch (process.argv[2]) {
     case "add":
       add();
@@ -48,22 +47,16 @@ async function main() {
   }
   //deva add
   async function add() {
-    const { createInterface } = require("readline");
-
     async function askQuestion(question, defaultValue) {
+      const { createInterface } = require("readline");
       const rl = createInterface({
         input: process.stdin,
         output: process.stdout,
       });
       return new Promise((resolve) => {
         rl.question(`${question} (default: ${defaultValue}): `, (answer) => {
-          if (forbiddenProjectNames.includes(answer)) {
-            question = `The project name "${answer}" is not allowed. Please choose a different name. ${question}`;
-            askQuestion(question, defaultValue);
-          } else {
-            rl.close();
-            resolve(answer || defaultValue);
-          }
+          rl.close();
+          resolve(answer || defaultValue);
         });
       });
     }
@@ -81,6 +74,15 @@ async function main() {
       PROJECT_NAME_QUESTION,
       PROJECT_NAME_DEFAULT,
     );
+    while (forbiddenProjectNames.includes(projectName)) {
+      console.log(
+        `The project name "${projectName}" is not allowed. Please choose a different name.`,
+      );
+      projectName = await askQuestion(
+        PROJECT_NAME_QUESTION,
+        PROJECT_NAME_DEFAULT,
+      );
+    }
     commandToRun = await askQuestion(
       COMMAND_TO_RUN_QUESTION,
       COMMAND_TO_RUN_DEFAULT,
@@ -97,11 +99,13 @@ async function main() {
     const dataToAdd = {
       path: PATH_THAT_SCRIPT_IS_RUNNING,
       commandToRun: commandToRun,
+      detached: false,
+      windowsHide: false,
     };
 
     //Update the data and push it to the config file
     parsedData[projectName] = dataToAdd;
-    await updateConfigFile(config_path, parsedData);
+    await updateConfigFile(configPath, parsedData);
     console.log("project added successfully");
   }
 
@@ -118,18 +122,30 @@ async function main() {
       console.log("project not found");
       return;
     }
-    let commandToRun = parsedData[projectName].commandToRun;
-    console.log("command to run : ", commandToRun);
-    let pathToRun = parsedData[projectName].path;
-    console.log("path to run : ", pathToRun);
+    let project = parsedData[projectName];
+    let commandParts = project.commandToRun.split(" ");
+    let command = commandParts[0];
+    let args = commandParts.slice(1);
+    
+    let spawnOptions = {
+      cwd: project.path,
+      detached: project.detached,
+      windowsHide: project.windowsHide,
+      shell: true
+    };
 
-    const { exec } = require("child_process");
-    exec(commandToRun, { cwd: pathToRun }, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error executing command: ${error.message}`);
-        return;
-      }
-      console.log(stdout);
+    const { spawn } = require("node:child_process");
+    const child = spawn(command, args, spawnOptions);
+    child.stdout.on("data", (data) => {
+      console.log(`stdout: ${data}`);
+    });
+
+    child.stderr.on("data", (data) => {
+      console.error(`stderr: ${data}`);
+    });
+
+    child.on("close", (code) => {
+      console.log(`child process exited with code ${code}`);
     });
   }
 }
@@ -137,14 +153,14 @@ main();
 //Helper functions
 
 // Reads the config file and returns the data as a json object
-// Param {string} config_path - the path to the config file
+// Param {string} configPath - the path to the config file
 // it does not parse the data , only read
-async function readConfigFile(config_path) {
+async function readConfigFile(configPath) {
   return new Promise((resolve, reject) => {
-    fs.readFile(config_path, "utf8", (err, data) => {
+    fs.readFile(configPath, "utf8", (err, data) => {
       if (err && err.code === "ENOENT") {
         // If the file does not exist, create it with an empty object
-        fs.writeFile(config_path, JSON.stringify({}, null, 2), (err) => {
+        fs.writeFile(configPath, JSON.stringify({}, null, 2), (err) => {
           if (err) {
             reject(err);
           } else {
@@ -175,9 +191,9 @@ async function parseConfigData(data) {
 }
 
 // update the config
-async function updateConfigFile(config_path, parsedData) {
+async function updateConfigFile(configPath, parsedData) {
   return new Promise((resolve, reject) => {
-    fs.writeFile(config_path, JSON.stringify(parsedData, null, 2), (err) => {
+    fs.writeFile(configPath, JSON.stringify(parsedData, null, 2), (err) => {
       if (err) {
         reject(err);
       } else {

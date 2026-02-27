@@ -40,8 +40,25 @@ async function main() {
     case undefined:
     case "-h":
     case "--help":
-      // put here a the commands that can be run , like a --help command
-      console.log("please enter a command");
+      console.log(`
+deva - Quick project launcher
+
+Usage:
+  deva add                    Add current directory as a project
+  deva list                   List all saved projects
+  deva list <project-name>    Show details for a specific project
+  deva run <project-name>     Run a saved project
+  deva <project-name>         Run a saved project (shorthand)
+  deva --help, -h             Show this help message
+
+Examples:
+  deva add                    # Save current project
+  deva list                   # See all projects
+  deva run my-app             # Run "my-app" project
+  deva my-app                 # Same as above
+
+Config location: ${configPath}
+      `);
       break;
     default:
       argumentIndexToRun = 2;

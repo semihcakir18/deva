@@ -25,7 +25,7 @@ async function main() {
   let data = await readConfigFile(configPath);
 
   //Parse the data from the config file
-  let parsedData = await parseConfigData(data);
+  let parsedData = await parseConfigData(data, configPath);
 
   switch (process.argv[2]) {
     case "add":
@@ -178,14 +178,38 @@ async function readConfigFile(configPath) {
 }
 
 // parses the data that came from config file
-async function parseConfigData(data) {
+async function parseConfigData(data, configPath) {
   return new Promise((resolve, reject) => {
     try {
       let parsedData = JSON.parse(data);
       console.log("parsed data : ", parsedData);
       resolve(parsedData);
     } catch (err) {
-      reject(err);
+      if (err instanceof SyntaxError) {
+        // Config file is corrupted - create backup and reset
+        const backupPath = configPath.replace('.json', '.backup.json');
+
+        // Rename corrupted file to backup
+        fs.rename(configPath, backupPath, (renameErr) => {
+          if (renameErr) {
+            console.error("Warning: Could not create backup of corrupted config file");
+          } else {
+            console.warn(`\nWarning: config.json was corrupted and has been backed up to ${backupPath}`);
+          }
+
+          // Create fresh config file
+          fs.writeFile(configPath, JSON.stringify({}, null, 2), (writeErr) => {
+            if (writeErr) {
+              reject(writeErr);
+            } else {
+              console.log("A fresh config file has been created.\n");
+              resolve({});
+            }
+          });
+        });
+      } else {
+        reject(err);
+      }
     }
   });
 }

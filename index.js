@@ -13,11 +13,11 @@
 // deva add
 const path = require("path");
 const fs = require("fs");
-const { cwd } = require("node:process");
 const PATH_THAT_SCRIPT_IS_RUNNING = process.cwd();
 let projectName = "";
 let commandToRun = "";
-let configPath = path.join(__dirname, "config.json");
+const os = require("os");
+let configPath = path.join(os.homedir(), ".deva", "config.json");
 let forbiddenProjectNames = ["add", "list", "run"];
 let argumentIndexToRun = 2; // if the user uses run command then project name will be from index 3 onwards , if not it will be from index 2
 async function main() {
@@ -37,7 +37,9 @@ async function main() {
     case "run":
       run();
       break;
-    case undefined || "--help" || "-h":
+    case undefined:
+    case "-h":
+    case "--help":
       // put here a the commands that can be run , like a --help command
       console.log("please enter a command");
       break;
@@ -112,7 +114,11 @@ async function main() {
 
   //deva list
   async function list() {
-    console.log("list of projects : ", Object.keys(parsedData));
+    if (process.argv[3]) {
+      console.log("Project details : ", parsedData[process.argv[3]]);
+    } else {
+      console.log("list of projects : ", Object.keys(parsedData));
+    }
   }
 
   //deva run <project name>
@@ -127,12 +133,12 @@ async function main() {
     let commandParts = project.commandToRun.split(" ");
     let command = commandParts[0];
     let args = commandParts.slice(1);
-    
+
     let spawnOptions = {
       cwd: project.path,
       detached: project.detached,
       windowsHide: project.windowsHide,
-      shell: true
+      shell: true,
     };
 
     const { spawn } = require("node:child_process");
@@ -160,18 +166,28 @@ async function readConfigFile(configPath) {
   return new Promise((resolve, reject) => {
     fs.readFile(configPath, "utf8", (err, data) => {
       if (err && err.code === "ENOENT") {
-        // If the file does not exist, create it with an empty object
-        fs.writeFile(configPath, JSON.stringify({}, null, 2), (err) => {
-          if (err) {
-            reject(err);
+        // If the file does not exist, create the directory and file
+        const configDir = path.dirname(configPath);
+        fs.mkdir(configDir, { recursive: true }, (mkdirErr) => {
+          if (mkdirErr) {
+            reject(mkdirErr);
           } else {
-            resolve("{}");
+            fs.writeFile(
+              configPath,
+              JSON.stringify({}, null, 2),
+              (writeErr) => {
+                if (writeErr) {
+                  reject(writeErr);
+                } else {
+                  resolve("{}");
+                }
+              },
+            );
           }
         });
       } else if (err) {
         reject(err);
       } else {
-        console.log("data from config file : ", data);
         resolve(data);
       }
     });
@@ -183,19 +199,22 @@ async function parseConfigData(data, configPath) {
   return new Promise((resolve, reject) => {
     try {
       let parsedData = JSON.parse(data);
-      console.log("parsed data : ", parsedData);
       resolve(parsedData);
     } catch (err) {
       if (err instanceof SyntaxError) {
         // Config file is corrupted - create backup and reset
-        const backupPath = configPath.replace('.json', '.backup.json');
+        const backupPath = configPath.replace(".json", ".backup.json");
 
         // Rename corrupted file to backup
         fs.rename(configPath, backupPath, (renameErr) => {
           if (renameErr) {
-            console.error("Warning: Could not create backup of corrupted config file");
+            console.error(
+              "Warning: Could not create backup of corrupted config file",
+            );
           } else {
-            console.warn(`\nWarning: config.json was corrupted and has been backed up to ${backupPath}`);
+            console.warn(
+              `\nWarning: config.json was corrupted and has been backed up to ${backupPath}`,
+            );
           }
 
           // Create fresh config file

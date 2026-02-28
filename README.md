@@ -45,6 +45,20 @@ deva --help
 deva -h
 ```
 
+### Tab Completion
+
+Enable autocomplete for commands and project names:
+
+```bash
+deva completion
+```
+
+This is a one-time setup. After running it, pressing tab will autocomplete:
+- Commands: `add`, `list`, `run`, `--help`
+- Your saved project names
+
+Works with bash, zsh, and fish shells.
+
 ## Example workflow
 
 ```bash

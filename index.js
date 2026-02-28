@@ -28,12 +28,12 @@ async function main() {
   let parsedData = await parseConfigData(data, configPath);
 
   // Handle tabtab completion
-  const tabtab = require('tabtab');
+  const tabtab = require("tabtab");
   const env = tabtab.parseEnv(process.env);
   if (env.complete) {
     const projects = Object.keys(parsedData);
-    if (env.prev === 'deva' || env.prev === 'run' || env.prev === 'list') {
-      return tabtab.log(['add', 'list', 'run', '--help', '-h', ...projects]);
+    if (env.prev === "deva" || env.prev === "run" || env.prev === "list") {
+      return tabtab.log(["add", "list", "run", "--help", "-h", ...projects]);
     }
     return tabtab.log([]);
   }
@@ -41,8 +41,8 @@ async function main() {
   switch (process.argv[2]) {
     case "completion":
       tabtab.install({
-        name: 'deva',
-        completer: 'deva',
+        name: "deva",
+        completer: "deva",
       });
       break;
     case "add":
@@ -52,6 +52,7 @@ async function main() {
       list();
       break;
     case "run":
+      argumentIndexToRun = 3;
       run();
       break;
     case undefined:
@@ -179,13 +180,8 @@ Config location: ${configPath}
 
     const { spawn } = require("node:child_process");
     const child = spawn(command, args, spawnOptions);
-    child.stdout.on("data", (data) => {
-      console.log(`stdout: ${data}`);
-    });
-
-    child.stderr.on("data", (data) => {
-      console.error(`stderr: ${data}`);
-    });
+    child.stdout.pipe(process.stdout);
+    child.stderr.pipe(process.stderr);
 
     child.on("close", (code) => {
       console.log(`child process exited with code ${code}`);

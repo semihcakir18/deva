@@ -4,7 +4,7 @@
   "description": "A global CLI tool to quickly launch and manage your local development projects with a single command.",
   "main": "index.js",
   "bin": {
-    "deva": "./index.js"
+    "deva": "index.js"
   },
   "scripts": {
     "test": "echo \"No tests yet\""

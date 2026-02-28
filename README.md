@@ -57,7 +57,9 @@ This is a one-time setup. After running it, pressing tab will autocomplete:
 - Commands: `add`, `list`, `run`, `--help`
 - Your saved project names
 
-Works with bash, zsh, and fish shells.
+**Supported shells:** bash, zsh, and fish.
+
+**Windows users:** Tab completion requires Git Bash or WSL. PowerShell and CMD are not supported.
 
 ## Example workflow
 
